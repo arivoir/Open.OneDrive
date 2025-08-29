@@ -37,6 +37,16 @@ namespace Open.OneDrive.Test
         }
 
         [Test]
+        public async Task GetUsersDriveTest()
+        {
+            var client = new OneDriveClient(_accessToken);
+            var drive = await client.GetDriveAsync();
+
+            Assert.That(drive, Is.Not.Null);
+        }
+        
+        
+        [Test]
         public async Task UploadAndDownloadFileTest()
         {
             var stringToUpload = "Hello, World!";
