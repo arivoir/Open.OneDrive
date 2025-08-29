@@ -9,8 +9,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Open.OneDrive
 {
@@ -230,34 +228,6 @@ namespace Open.OneDrive
             }
         }
 
-        //public async Task<Item> UploadFileAsync(string folderPath, string fileName, Stream fileStream, bool? overwrite, IProgress<StreamProgress> progress, string expand = null, string select = null, CancellationToken cancellationToken = default(CancellationToken))
-        //{
-        //    var uri = BuildApiUri(folderPath + "/children", expand);
-        //    var client = CreateClient();
-        //    var content = new MultipartContent("related");
-        //    var item = new Item();
-        //    item.Name = fileName;
-        //    item.File = new FileFacet();
-        //    item.SourceUrl = "cid:content";
-        //    item.ConflictBehavior = overwrite.HasValue ? overwrite.Value ? ConflictBehavior.Replace : ConflictBehavior.Rename : ConflictBehavior.Fail;
-        //    var text = item.SerializeJson();
-        //    var textContent = new StringContent(text);
-        //    textContent.Headers.Add("Content-ID", "<metadata>");
-        //    textContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        //    content.Add(textContent);
-        //    var fileContent2 = new StreamedContent(fileStream, progress, cancellationToken);
-        //    fileContent2.Headers.Add("Content-ID", "<content>");
-        //    content.Add(fileContent2);
-        //    var response = await client.PostAsync(uri, content, cancellationToken);//.AsTask(cancellationToken, progress);
-        //    if (response.IsSuccessStatusCode)
-        //    {
-        //        return await response.Content.ReadJsonAsync<Item>();
-        //    }
-        //    else
-        //    {
-        //        throw await ProcessException(response.Content);
-        //    }
-        //}
         public async Task<Item> UploadFileAsync(string folderPath, string fileName, Stream fileStream, bool? overwrite, IProgress<StreamProgress> progress, string expand = null, string select = null, CancellationToken cancellationToken = default)
         {
             var uri = BuildApiUri($"/me{folderPath}/{fileName}:/content", expand);
