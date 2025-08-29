@@ -16,9 +16,9 @@ namespace Open.OneDrive
     {
         #region ** fields
 
-        private static readonly string ApiServiceUri = "https://api.onedrive.com/v1.0";
-        private static readonly string OAUTH2 = "https://login.live.com/oauth20_authorize.srf";
-        private static readonly string TOKEN = "https://login.live.com/oauth20_token.srf";
+        private static readonly string ApiServiceUri = "https://graph.microsoft.com/v1.0";
+        private static readonly string OAUTH2 = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+        private static readonly string TOKEN = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
         private string _accessToken = null;
 
         //Get root folder for user's default Drive GET /drive/root 
@@ -56,7 +56,7 @@ namespace Open.OneDrive
 
         #region ** authentication
 
-        public static string GetRequestUrl(string clientId, string scope, string callbackUrl = "https://oauth.live.com/desktop", string response_type = "code")
+        public static string GetRequestUrl(string clientId, string scope, string callbackUrl = "https://login.microsoftonline.com/common/oauth2/nativeclient", string response_type = "code")
         {
             return OAuth2Client.GetRequestUrl(OAUTH2, clientId, scope, callbackUrl, response_type: response_type, parameters: new Dictionary<string, string> { { "prompt", "login" } });
         }
@@ -341,20 +341,20 @@ namespace Open.OneDrive
             if (query.StartsWith("?"))
                 query = query.Substring(1);
             if (!string.IsNullOrWhiteSpace(expand))
-                query += "&$expand=" + Uri.EscapeDataString(expand);
+                query += "&$expand=" + expand;
             if (!string.IsNullOrWhiteSpace(select))
-                query += "&$select=" + Uri.EscapeDataString(select);
+                query += "&$select=" + select;
             if (top.HasValue && top > 0)
                 query += "&$top=" + top;
             if (!string.IsNullOrWhiteSpace(orderby))
-                query += "&$orderby=" + Uri.EscapeDataString(orderby);
+                query += "&$orderby=" + orderby;
             if (!string.IsNullOrWhiteSpace(filter))
-                query += "&$filter=" + Uri.EscapeDataString(filter);
+                query += "&$filter=" + filter;
             if (!string.IsNullOrWhiteSpace(skipToken))
                 query += "&$skiptoken=" + skipToken;
             if (!string.IsNullOrWhiteSpace(q))
-                query += "&q=" + Uri.EscapeDataString(q);
-            builder.Query = query;
+                query += "&q=" + q;
+            builder.Query = Uri.EscapeDataString(query);
             return builder.Uri;
 
         }
