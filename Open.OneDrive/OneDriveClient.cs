@@ -87,6 +87,26 @@ namespace Open.OneDrive
         #region public methods
 
         /// <summary>
+        /// Gets the list of drives. 
+        /// </summary>
+        /// <remarks>GET me/drives</remarks>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        public async Task<Drives> GetDrivesAsync(string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var uri = BuildApiUri("/me/drives", expand, select, skipToken, top, orderby);
+            var client = CreateClient();
+            var response = await client.GetAsync(uri, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadJsonAsync<Drives>();
+            }
+            else
+            {
+                throw await ProcessException(response.Content);
+            }
+        }
+
+        /// <summary>
         /// Get user's default Drive metadata 
         /// </summary>
         /// <remarks>GET /drive</remarks>
@@ -347,11 +367,11 @@ namespace Open.OneDrive
             var response = await client.GetAsync(uri, cancellationToken);
             if (response.IsSuccessStatusCode)
             {
-                return new (await response.Content.ReadJsonAsync<AsyncJobStatus>(), null);
+                return new(await response.Content.ReadJsonAsync<AsyncJobStatus>(), null);
             }
             else if (response.StatusCode == (HttpStatusCode)303)
             {
-                return new (null, response.Headers.Location);
+                return new(null, response.Headers.Location);
             }
             else
             {

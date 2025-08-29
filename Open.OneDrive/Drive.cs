@@ -1,7 +1,17 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Open.OneDrive
 {
+    [DataContract]
+    public class Drives
+    {
+        [DataMember(Name = "value")]
+        public List<Drive> Value { get; set; }
+        [DataMember(Name = "@odata.nextLink")]
+        public string NextLink { get; set; }
+    }
+
     [DataContract]
     public class Drive
     {
