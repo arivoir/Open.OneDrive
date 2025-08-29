@@ -9,12 +9,14 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Open.OneDrive
 {
     public class OneDriveClient : OAuth2Client
     {
-        #region ** fields
+        #region fields
 
         private static readonly string ApiServiceUri = "https://graph.microsoft.com/v1.0";
         private static readonly string OAUTH2 = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
@@ -41,7 +43,7 @@ namespace Open.OneDrive
 
         #endregion
 
-        #region ** initialization
+        #region initialization
 
         public OneDriveClient()
         {
@@ -54,7 +56,7 @@ namespace Open.OneDrive
 
         #endregion
 
-        #region ** authentication
+        #region authentication
 
         public static string GetRequestUrl(string clientId, string scope, string callbackUrl = "https://login.microsoftonline.com/common/oauth2/nativeclient", string response_type = "code")
         {
@@ -80,7 +82,7 @@ namespace Open.OneDrive
 
         #endregion
 
-        #region ** public methods
+        #region public methods
 
         /// <summary>
         /// Get user's default Drive metadata 
@@ -141,7 +143,7 @@ namespace Open.OneDrive
         /// <returns></returns>
         public async Task<Items> GetItemsAsync(string folderPath, string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, string filter = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var uri = BuildApiUri(folderPath + "/children", expand, select, skipToken, top, orderby, filter);
+            var uri = BuildApiUri($"{folderPath}:/children", expand, select, skipToken, top, orderby, filter);
             var client = CreateClient();
             var response = await client.GetAsync(uri, cancellationToken);
             if (response.IsSuccessStatusCode)
@@ -206,25 +208,41 @@ namespace Open.OneDrive
             }
         }
 
-        public async Task<Item> UploadFileAsync(string folderPath, string fileName, Stream fileStream, bool? overwrite, IProgress<StreamProgress> progress, string expand = null, string select = null, CancellationToken cancellationToken = default(CancellationToken))
+        //public async Task<Item> UploadFileAsync(string folderPath, string fileName, Stream fileStream, bool? overwrite, IProgress<StreamProgress> progress, string expand = null, string select = null, CancellationToken cancellationToken = default(CancellationToken))
+        //{
+        //    var uri = BuildApiUri(folderPath + "/children", expand);
+        //    var client = CreateClient();
+        //    var content = new MultipartContent("related");
+        //    var item = new Item();
+        //    item.Name = fileName;
+        //    item.File = new FileFacet();
+        //    item.SourceUrl = "cid:content";
+        //    item.ConflictBehavior = overwrite.HasValue ? overwrite.Value ? ConflictBehavior.Replace : ConflictBehavior.Rename : ConflictBehavior.Fail;
+        //    var text = item.SerializeJson();
+        //    var textContent = new StringContent(text);
+        //    textContent.Headers.Add("Content-ID", "<metadata>");
+        //    textContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        //    content.Add(textContent);
+        //    var fileContent2 = new StreamedContent(fileStream, progress, cancellationToken);
+        //    fileContent2.Headers.Add("Content-ID", "<content>");
+        //    content.Add(fileContent2);
+        //    var response = await client.PostAsync(uri, content, cancellationToken);//.AsTask(cancellationToken, progress);
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        return await response.Content.ReadJsonAsync<Item>();
+        //    }
+        //    else
+        //    {
+        //        throw await ProcessException(response.Content);
+        //    }
+        //}
+        public async Task<Item> UploadFileAsync(string folderPath, string fileName, Stream fileStream, bool? overwrite, IProgress<StreamProgress> progress, string expand = null, string select = null, CancellationToken cancellationToken = default)
         {
-            var uri = BuildApiUri(folderPath + "/children", expand);
+            var uri = BuildApiUri($"/me{folderPath}/{fileName}:/content", expand);
             var client = CreateClient();
-            var content = new MultipartContent("related");
-            var item = new Item();
-            item.Name = fileName;
-            item.File = new FileFacet();
-            item.SourceUrl = "cid:content";
-            item.ConflictBehavior = overwrite.HasValue ? overwrite.Value ? ConflictBehavior.Replace : ConflictBehavior.Rename : ConflictBehavior.Fail;
-            var text = item.SerializeJson();
-            var textContent = new StringContent(text);
-            textContent.Headers.Add("Content-ID", "<metadata>");
-            textContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            content.Add(textContent);
-            var fileContent2 = new StreamedContent(fileStream, progress, cancellationToken);
-            fileContent2.Headers.Add("Content-ID", "<content>");
-            content.Add(fileContent2);
-            var response = await client.PostAsync(uri, content, cancellationToken);//.AsTask(cancellationToken, progress);
+            var content = new StreamedContent(fileStream, progress, cancellationToken);
+            content.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+            var response = await client.PutAsync(uri, content, cancellationToken);//.AsTask(cancellationToken, progress);
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadJsonAsync<Item>();
@@ -235,6 +253,43 @@ namespace Open.OneDrive
             }
         }
 
+        public async Task<UploadSession> CreateUploadSession(string folderPath, string fileName, string description, bool? overwrite, string expand = null, string select = null, CancellationToken cancellationToken = default)
+        {
+            var uri = BuildApiUri($"/me{folderPath}/{fileName}:/createUploadSession", expand);
+            var client = CreateClient();
+            var item = new Item { Name = fileName, Description = description };
+            item.ConflictBehavior = overwrite.HasValue ? overwrite.Value ? ConflictBehavior.Replace : ConflictBehavior.Rename : ConflictBehavior.Fail;
+            var content = new StringContent(item.SerializeJson());
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            var response = await client.PostAsync(uri, content, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadJsonAsync<UploadSession>();
+            }
+            else
+            {
+                throw await ProcessException(response.Content);
+            }
+        }
+
+        public async Task<(UploadSession, Item)> UploadBytesToSession(string uri, int from, int total, Stream fileStream, IProgress<StreamProgress> progress, string expand = null, string select = null, CancellationToken cancellationToken = default)
+        {
+            var client = new HttpClient();
+            var content = new StreamedContent(fileStream, progress, cancellationToken);
+            content.Headers.ContentRange = new ContentRangeHeaderValue(from, from + fileStream.Length - 1, total);
+            var response = await client.PutAsync(uri, content, cancellationToken);//.AsTask(cancellationToken, progress);
+            if (response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == HttpStatusCode.Created)
+                    return (null, await response.Content.ReadJsonAsync<Item>());
+                else
+                    return (await response.Content.ReadJsonAsync<UploadSession>(), null);
+            }
+            else
+            {
+                throw await ProcessException(response.Content);
+            }
+        }
         public async Task DeleteItemAsync(string itemPath, CancellationToken cancellationToken = default(CancellationToken))
         {
             var uri = BuildApiUri(itemPath);
@@ -326,7 +381,7 @@ namespace Open.OneDrive
 
         #endregion
 
-        #region ** private stuff
+        #region private stuff
 
         /// <summary>
         /// Build the API service URI.
@@ -361,7 +416,7 @@ namespace Open.OneDrive
 
         public static string GetPath(string itemPath)
         {
-            return string.IsNullOrWhiteSpace(itemPath) ? "/drive/root" : "/drive/root/" + itemPath;
+            return string.IsNullOrWhiteSpace(itemPath) ? "/drive/root" : "/drive/root:/" + itemPath;
         }
         public static string GetPathById(string itemId)
         {
