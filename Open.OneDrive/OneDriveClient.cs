@@ -198,7 +198,7 @@ namespace Open.OneDrive
         public async Task<Stream> DownloadFileAsync(string filePath, CancellationToken cancellationToken)
         {
             var client = CreateClient();
-            var uri = BuildApiUri(filePath + "/content");
+            var uri = BuildApiUri($"/me{filePath}:/content");
             var response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             if (response.IsSuccessStatusCode)
             {
