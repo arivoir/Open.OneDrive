@@ -32,7 +32,7 @@ namespace Open.OneDrive.Test
         {
             var client = new OneDriveClient(_accessToken);
             var drives = await client.GetDrivesAsync();
-        
+
             Assert.That(drives.Value, Is.Not.Null);
         }
 
@@ -44,8 +44,8 @@ namespace Open.OneDrive.Test
 
             Assert.That(drive, Is.Not.Null);
         }
-        
-        
+
+
         [Test]
         public async Task UploadAndDownloadFileTest()
         {
@@ -86,12 +86,12 @@ namespace Open.OneDrive.Test
             var stringToUpload = "Hello, World!";
             var client = new OneDriveClient(_accessToken);
             var file = await client.UploadFileAsync(_rootFolderId, "file.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
-            
+
             var item = new Item
             {
                 Name = "copiedFile.txt"
             };
-            var uri = await client.CopyItemAsync($"{_rootFolderId}/file.txt",item, CancellationToken.None);
+            var uri = await client.CopyItemAsync($"{_rootFolderId}/file.txt", item, CancellationToken.None);
             var copyStatus = await client.GetCopyStatusAsync(uri, CancellationToken.None);
             var fileStream = await client.DownloadFileAsync($"{_rootFolderId}/copiedFile.txt", CancellationToken.None);
             using var reader = new StreamReader(fileStream);
@@ -100,6 +100,21 @@ namespace Open.OneDrive.Test
             Assert.That(file.Name, Is.EqualTo("file.txt"));
             Assert.That(copyStatus.status.PercentageComplete, Is.EqualTo(100));
             Assert.That(fileContent, Is.EqualTo(stringToUpload));
+        }
+
+        [Test]
+        public async Task SearchTest()
+        {
+            var stringToUpload = "Hello, World!";
+            var client = new OneDriveClient(_accessToken);
+            var file1 = await client.UploadFileAsync(_rootFolderId, "file.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
+            var file2 = await client.UploadFileAsync(_rootFolderId, "file2.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
+            var file3 = await client.UploadFileAsync(_rootFolderId, "nile.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
+            var items = await client.SearchAsync(_rootFolderId, "file");
+
+            Assert.That(file1.Name, Is.EqualTo("file.txt"));
+            Assert.That(file2.Name, Is.EqualTo("file2.txt"));
+            //Assert.That(items.Value.Count, Is.EqualTo(2));
         }
     }
 }

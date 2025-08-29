@@ -202,7 +202,7 @@ namespace Open.OneDrive
 
         public async Task<Items> SearchAsync(string filePath, string q, string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, string filter = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var uri = BuildApiUri(filePath + "/view.search", expand, select, skipToken, top, filter: filter, q: q);
+            var uri = BuildApiUri($"/me{filePath}:/search(q='{q}')", expand, select, skipToken, top, filter: filter);
             var client = CreateClient();
             var response = await client.GetAsync(uri, cancellationToken);
             if (response.IsSuccessStatusCode)
