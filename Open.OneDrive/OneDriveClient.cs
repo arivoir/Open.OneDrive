@@ -326,12 +326,10 @@ namespace Open.OneDrive
         public async Task<Uri> CopyItemAsync(string itemPath, Item item, CancellationToken cancellationToken = default(CancellationToken))
         {
 
-            var uri = BuildApiUri(itemPath + "/action.copy");
+            var uri = BuildApiUri($"/me{itemPath}:/copy");
             var client = CreateClient();
-            var requestStream = new MemoryStream();
             var content = new StringContent(item.SerializeJson());
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            content.Headers.Add("Prefer", "respond-async");
             var response = await client.PostAsync(uri, content, cancellationToken);
             if (response.IsSuccessStatusCode)
             {
@@ -343,17 +341,17 @@ namespace Open.OneDrive
             }
         }
 
-        public async Task<Tuple<AsyncOperationStatus, Uri>> GetCopyStatusAsync(Uri uri, CancellationToken cancellationToken)
+        public async Task<(AsyncJobStatus status, Uri url)> GetCopyStatusAsync(Uri uri, CancellationToken cancellationToken)
         {
-            var client = CreateClient(false);
+            var client = new HttpClient();
             var response = await client.GetAsync(uri, cancellationToken);
             if (response.IsSuccessStatusCode)
             {
-                return new Tuple<AsyncOperationStatus, Uri>(await response.Content.ReadJsonAsync<AsyncOperationStatus>(), null);
+                return new (await response.Content.ReadJsonAsync<AsyncJobStatus>(), null);
             }
             else if (response.StatusCode == (HttpStatusCode)303)
             {
-                return new Tuple<AsyncOperationStatus, Uri>(null, response.Headers.Location);
+                return new (null, response.Headers.Location);
             }
             else
             {

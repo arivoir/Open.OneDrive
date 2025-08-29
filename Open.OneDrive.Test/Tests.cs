@@ -30,14 +30,15 @@ namespace Open.OneDrive.Test
         [Test]
         public async Task UploadAndDownloadFileTest()
         {
+            var stringToUpload = "Hello, World!";
             var client = new OneDriveClient(_accessToken);
-            var file = await client.UploadFileAsync(_rootFolderId, "file.txt", new MemoryStream(Encoding.UTF8.GetBytes("Hello, World!")), true, new Progress<StreamProgress>(p => { }));
+            var file = await client.UploadFileAsync(_rootFolderId, "file.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
             var fileStream = await client.DownloadFileAsync($"{_rootFolderId}/file.txt", CancellationToken.None);
             using var reader = new StreamReader(fileStream);
             var fileContent = reader.ReadToEnd();
 
             Assert.That(file.Name, Is.EqualTo("file.txt"));
-            Assert.That(fileContent, Is.EqualTo("Hello, World!"));
+            Assert.That(fileContent, Is.EqualTo(stringToUpload));
         }
 
         [Test]
@@ -57,6 +58,28 @@ namespace Open.OneDrive.Test
             Assert.That(file1, Is.Null);
             Assert.That(session2, Is.Null);
             Assert.That(file2.Name, Is.EqualTo("largeFile.txt"));
+            Assert.That(fileContent, Is.EqualTo(stringToUpload));
+        }
+
+        [Test]
+        public async Task CopyFileTest()
+        {
+            var stringToUpload = "Hello, World!";
+            var client = new OneDriveClient(_accessToken);
+            var file = await client.UploadFileAsync(_rootFolderId, "file.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
+            
+            var item = new Item
+            {
+                Name = "copiedFile.txt"
+            };
+            var uri = await client.CopyItemAsync($"{_rootFolderId}/file.txt",item, CancellationToken.None);
+            var copyStatus = await client.GetCopyStatusAsync(uri, CancellationToken.None);
+            var fileStream = await client.DownloadFileAsync($"{_rootFolderId}/copiedFile.txt", CancellationToken.None);
+            using var reader = new StreamReader(fileStream);
+            var fileContent = reader.ReadToEnd();
+
+            Assert.That(file.Name, Is.EqualTo("file.txt"));
+            Assert.That(copyStatus.status.PercentageComplete, Is.EqualTo(100));
             Assert.That(fileContent, Is.EqualTo(stringToUpload));
         }
     }
