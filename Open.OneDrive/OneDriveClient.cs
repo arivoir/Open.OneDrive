@@ -51,6 +51,8 @@ namespace Open.OneDrive
 
         public OneDriveClient(string accessToken)
         {
+            if (string.IsNullOrWhiteSpace(accessToken))
+                throw new ArgumentNullException(nameof(accessToken));
             _accessToken = accessToken;
         }
 

@@ -7,6 +7,7 @@
 		<Description>.Net Standard OneDrive library</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Version>1.0.1</Version>
+		<LangVersion>latest</LangVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
