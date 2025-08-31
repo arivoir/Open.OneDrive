@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: Testing
     env:
-      ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
