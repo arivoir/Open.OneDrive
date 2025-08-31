@@ -13,7 +13,10 @@ namespace Open.OneDrive.Test
         public async Task Setup()
         {
             Env.Load();
-            _accessToken = Environment.GetEnvironmentVariable("ACCESS_TOKEN")!;
+            var clientId = Environment.GetEnvironmentVariable("CLIENT_ID")!;
+            var refreshToke = Environment.GetEnvironmentVariable("REFRESH_TOKEN")!;
+            var token = await OneDriveClient.RefreshAccessTokenAsync(refreshToke, clientId, "", CancellationToken.None);
+            _accessToken = token.AccessToken;
             var client = new OneDriveClient(_accessToken);
             var rootFolderName = Guid.NewGuid().ToString();
             _rootFolderId = OneDriveClient.GetPath(rootFolderName);
