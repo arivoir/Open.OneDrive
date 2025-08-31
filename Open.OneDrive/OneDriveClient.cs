@@ -77,6 +77,8 @@ public class OneDriveClient : OAuth2Client
 #else
     public static async Task<OAuth2Token> RefreshAccessTokenAsync(string refreshToken, string clientId, string clientSecret, CancellationToken cancellationToken)
     {
+        if(string.IsNullOrWhiteSpace(refreshToken))
+            throw new ArgumentNullException(nameof(refreshToken));
         return await OAuth2Client.RefreshAccessTokenAsync(TOKEN, refreshToken, clientId, clientSecret, cancellationToken);
     }
 #endif
