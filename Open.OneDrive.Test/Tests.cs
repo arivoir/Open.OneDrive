@@ -14,8 +14,8 @@ namespace Open.OneDrive.Test
         {
             Env.Load();
             var clientId = Environment.GetEnvironmentVariable("CLIENT_ID")!;
-            var refreshToke = Environment.GetEnvironmentVariable("REFRESH_TOKEN")!;
-            var token = await OneDriveClient.RefreshAccessTokenAsync(refreshToke, clientId, "", CancellationToken.None);
+            var refreshToken = Environment.GetEnvironmentVariable("REFRESH_TOKEN")!;
+            var token = await OneDriveClient.RefreshAccessTokenAsync(refreshToken, clientId, "", CancellationToken.None);
             _accessToken = token.AccessToken;
             var client = new OneDriveClient(_accessToken);
             var rootFolderName = Guid.NewGuid().ToString();

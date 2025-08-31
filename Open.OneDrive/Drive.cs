@@ -1,36 +1,35 @@
 ﻿using System.Collections.Generic;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
-namespace Open.OneDrive
+namespace Open.OneDrive;
+
+public class Drives
 {
-    [DataContract]
-    public class Drives
-    {
-        [DataMember(Name = "value")]
-        public List<Drive> Value { get; set; }
-        [DataMember(Name = "@odata.nextLink")]
-        public string NextLink { get; set; }
-    }
+    [JsonPropertyName("value")]
+    public List<Drive> Value { get; set; }
 
-    [DataContract]
-    public class Drive
-    {
-        [DataMember(Name = "id")]
-        public string Id { get; set; }
-        [DataMember(Name = "driveType")]
-        public DriveType DriveType { get; set; }
-        [DataMember(Name = "owner")]
-        public IdentitySet Owner { get; set; }
-        [DataMember(Name = "quota")]
-        public Quota Quota { get; set; }
-    }
+    [JsonPropertyName("@odata.nextLink")]
+    public string NextLink { get; set; }
+}
 
-    [DataContract(IsReference = false)]
-    public enum DriveType
-    {
-        [EnumMember(Value = "personal")]
-        Personal,
-        [EnumMember(Value = "business")]
-        Business,
-    }
+public class Drive
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("driveType")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public DriveType DriveType { get; set; }
+
+    [JsonPropertyName("owner")]
+    public IdentitySet Owner { get; set; }
+
+    [JsonPropertyName("quota")]
+    public Quota Quota { get; set; }
+}
+
+public enum DriveType
+{
+    Personal,
+    Business,
 }

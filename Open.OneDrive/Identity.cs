@@ -1,24 +1,25 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace Open.OneDrive
+namespace Open.OneDrive;
+
+public class IdentitySet
 {
-    [DataContract]
-    public class IdentitySet
-    {
-        [DataMember(Name = "user")]
-        public Identity User { get; set; }
-        [DataMember(Name = "application")]
-        public Identity Application { get; set; }
-        [DataMember(Name = "device")]
-        public Identity Device { get; set; }
-    }
+    [JsonPropertyName("user")]
+    public Identity User { get; set; }
 
-    public class Identity
-    {
-        [DataMember(Name = "id")]
-        public string Id { get; set; }
-        [DataMember(Name = "displayName")]
-        public string DisplayName { get; set; }
+    [JsonPropertyName("application")]
+    public Identity Application { get; set; }
 
-    }
+    [JsonPropertyName("device")]
+    public Identity Device { get; set; }
+}
+
+public class Identity
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("displayName")]
+    public string DisplayName { get; set; }
+
 }

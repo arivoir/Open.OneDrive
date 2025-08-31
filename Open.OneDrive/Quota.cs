@@ -1,19 +1,21 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace Open.OneDrive
+namespace Open.OneDrive;
+
+public class Quota
 {
-    [DataContract]
-    public class Quota
-    {
-        [DataMember(Name = "total")]
-        public long Total { get; set; }
-        [DataMember(Name = "used")]
-        public long Used { get; set; }
-        [DataMember(Name = "remaining")]
-        public long Remaining { get; set; }
-        [DataMember(Name = "deleted")]
-        public long Deleted { get; set; }
-        [DataMember(Name = "state")]
-        public string State { get; set; } //"normal | nearing | critical | exceeded"
-    }
+    [JsonPropertyName("total")]
+    public long Total { get; set; }
+    
+    [JsonPropertyName("used")]
+    public long Used { get; set; }
+    
+    [JsonPropertyName("remaining")]
+    public long Remaining { get; set; }
+    
+    [JsonPropertyName("deleted")]
+    public long Deleted { get; set; }
+    
+    [JsonPropertyName("state")]
+    public string State { get; set; } //"normal | nearing | critical | exceeded"
 }

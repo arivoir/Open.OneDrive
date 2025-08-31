@@ -1,15 +1,18 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace Open.OneDrive
+namespace Open.OneDrive;
+
+public class Location
 {
-    [DataContract]
-    public class Location
-    {
-        [DataMember(Name = "latitude", EmitDefaultValue = false)]
-        public double Latitude { get; set; }
-        [DataMember(Name = "longitude", EmitDefaultValue = false)]
-        public double Longitude { get; set; }
-        [DataMember(Name = "altitude", EmitDefaultValue = false)]
-        public double Altitude { get; set; }
-    }
+    [JsonPropertyName("latitude")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public double Latitude { get; set; }
+
+    [JsonPropertyName("longitude")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public double Longitude { get; set; }
+
+    [JsonPropertyName("altitude")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public double Altitude { get; set; }
 }

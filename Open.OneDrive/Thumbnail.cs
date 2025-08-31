@@ -1,30 +1,27 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace Open.OneDrive
+namespace Open.OneDrive;
+
+public class ThumbnailsSet
 {
-    [DataContract]
-    public class ThumbnailsSet
-    {
-        [DataMember(Name = "id")]
-        public int id { get; set; }
-        [DataMember(Name = "small")]
-        public Thumbnail small { get; set; }
-        [DataMember(Name = "medium")]
-        public Thumbnail Medium { get; set; }
-        [DataMember(Name = "large")]
-        public Thumbnail Large { get; set; }
-        [DataMember(Name = "source")]
-        public Thumbnail source { get; set; }
-    }
+    [JsonPropertyName("id")]
+    public int id { get; set; }
+    [JsonPropertyName("small")]
+    public Thumbnail small { get; set; }
+    [JsonPropertyName("medium")]
+    public Thumbnail Medium { get; set; }
+    [JsonPropertyName("large")]
+    public Thumbnail Large { get; set; }
+    [JsonPropertyName("source")]
+    public Thumbnail source { get; set; }
+}
 
-    [DataContract]
-    public class Thumbnail
-    {
-        [DataMember(Name = "width")]
-        public int Width { get; set; }
-        [DataMember(Name = "height")]
-        public int Height { get; set; }
-        [DataMember(Name = "url")]
-        public string Url { get; set; }
-    }
+public class Thumbnail
+{
+    [JsonPropertyName("width")]
+    public int Width { get; set; }
+    [JsonPropertyName("height")]
+    public int Height { get; set; }
+    [JsonPropertyName("url")]
+    public string Url { get; set; }
 }

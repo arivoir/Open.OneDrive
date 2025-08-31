@@ -1,18 +1,19 @@
 ﻿using System;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
-namespace Open.OneDrive
+namespace Open.OneDrive;
+
+public class UploadSession
 {
-    [DataContract]
-    public class UploadSession
-    {
-        [DataMember(Name = "uploadUrl", EmitDefaultValue = false)]
-        public string UploadUrl { get; set; }
+    [JsonPropertyName("uploadUrl")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string UploadUrl { get; set; }
 
-        [DataMember(Name = "expirationDateTime", EmitDefaultValue = false)]
-        public DateTime ExpirationDateTime { get; set; }
+    [JsonPropertyName("expirationDateTime")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public DateTime ExpirationDateTime { get; set; }
 
-        [DataMember(Name = "nextExpectedRanges", EmitDefaultValue = false)]
-        public string[] NextExpectedRanges { get; set; }
-    }
+    [JsonPropertyName("nextExpectedRanges")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string[] NextExpectedRanges { get; set; }
 }
