@@ -64,6 +64,25 @@ namespace Open.OneDrive.Test
             Assert.That(items.Value[1].Name, Is.EqualTo("file.txt"));
         }
 
+        [Test]
+        public async Task GetItemsWithSelectTest()
+        {
+            var stringToUpload = "Hello, World!";
+            var client = new OneDriveClient(_accessToken);
+            var file = await client.UploadFileAsync(_rootFolderId, "file.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
+            var folder = await client.CreateFolderAsync(_rootFolderId, "folder", "", false);
+            var items = await client.GetItemsAsync(_rootFolderId, select: "id,name");
+
+            Assert.That(items.Value, Is.Not.Null);
+            Assert.That(items.Value.Count, Is.EqualTo(2));
+            Assert.That(items.Value[0].Name, Is.EqualTo("folder"));
+            Assert.That(items.Value[0].CreatedBy, Is.Null);
+            Assert.That(items.Value[0].CreatedDateTime, Is.Null);
+            Assert.That(items.Value[1].Name, Is.EqualTo("file.txt"));
+            Assert.That(items.Value[1].CreatedBy, Is.Null);
+            Assert.That(items.Value[1].CreatedDateTime, Is.Null);
+        }
+
         //[Test]
         //public async Task GetFilesTest()
         //{
