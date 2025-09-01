@@ -83,6 +83,46 @@ namespace Open.OneDrive.Test
             Assert.That(items.Value[1].CreatedDateTime, Is.Null);
         }
 
+        [Test]
+        public async Task GetItemsWithTopAndSkipTest()
+        {
+            var stringToUpload = "Hello, World!";
+            var client = new OneDriveClient(_accessToken);
+            for (int i = 1; i < 10; i++)
+            {
+                await client.CreateFolderAsync(_rootFolderId, $"folder {i}", "", false);
+            }
+            var items1 = await client.GetItemsAsync(_rootFolderId, top: 3);
+            var items2 = await client.GetItemsAsync(_rootFolderId, top: 3, skipToken: GetSkipToken(items1.NextLink));
+            var items3 = await client.GetItemsAsync(_rootFolderId, top: 3, skipToken: GetSkipToken(items2.NextLink));
+
+            Assert.That(items1.Value, Is.Not.Null);
+            Assert.That(items1.Value.Count, Is.EqualTo(3));
+            Assert.That(items1.Value[0].Name, Is.EqualTo("folder 1"));
+            Assert.That(items1.Value[1].Name, Is.EqualTo("folder 2"));
+            Assert.That(items1.Value[2].Name, Is.EqualTo("folder 3"));
+            Assert.That(items2.Value, Is.Not.Null);
+            Assert.That(items2.Value.Count, Is.EqualTo(3));
+            Assert.That(items2.Value[0].Name, Is.EqualTo("folder 4"));
+            Assert.That(items2.Value[1].Name, Is.EqualTo("folder 5"));
+            Assert.That(items2.Value[2].Name, Is.EqualTo("folder 6"));
+            Assert.That(items3.Value, Is.Not.Null);
+            Assert.That(items3.Value.Count, Is.EqualTo(3));
+            Assert.That(items3.Value[0].Name, Is.EqualTo("folder 7"));
+            Assert.That(items3.Value[1].Name, Is.EqualTo("folder 8"));
+            Assert.That(items3.Value[2].Name, Is.EqualTo("folder 9"));
+        }
+
+        private string GetSkipToken(string nextLink)
+        {
+            var uri = new Uri(nextLink);
+            var queryParams = uri.Query.TrimStart('?')
+                             .Split('&', StringSplitOptions.RemoveEmptyEntries)
+                             .Select(q => q.Split('='))
+                             .ToDictionary(kv => kv[0].ToLower(), kv => Uri.UnescapeDataString(kv[1]));
+            return queryParams["$skiptoken"];
+        }
+
         //[Test]
         //public async Task GetFilesTest()
         //{

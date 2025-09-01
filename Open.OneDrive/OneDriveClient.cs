@@ -420,7 +420,7 @@ public class OneDriveClient : OAuth2Client
         if (top.HasValue && top > 0)
             query.Add("top", top.ToString());
         if (!string.IsNullOrWhiteSpace(skipToken))
-            query.Add("top", skipToken);
+            query.Add("skipToken", skipToken);
         if (!string.IsNullOrWhiteSpace(filter))
             query.Add("filter", filter);
         builder.Query = string.Join('&', query.Select(pair => $"${pair.Key}={Uri.EscapeDataString(pair.Value)}").ToArray());
