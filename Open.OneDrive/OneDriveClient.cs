@@ -1,15 +1,9 @@
 ﻿using Open.IO;
 using Open.Net.Http;
 using Open.OAuth2;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Open.OneDrive;
 
@@ -94,7 +88,7 @@ public class OneDriveClient : OAuth2Client
     /// </summary>
     /// <remarks>GET me/drives</remarks>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task<Drives> GetDrivesAsync(string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<Drives> GetDrivesAsync(string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, CancellationToken cancellationToken = default)
     {
         var uri = BuildApiUri("/me/drives", expand, select, skipToken, top, orderby);
         var client = CreateClient();
@@ -114,7 +108,7 @@ public class OneDriveClient : OAuth2Client
     /// </summary>
     /// <remarks>GET /drive</remarks>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task<Drive> GetDriveAsync(string expand = null, string select = null, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<Drive> GetDriveAsync(string expand = null, string select = null, CancellationToken cancellationToken = default)
     {
         var uri = BuildApiUri("/drive", expand, select);
         var client = CreateClient();
@@ -136,7 +130,7 @@ public class OneDriveClient : OAuth2Client
     /// <param name="driveId">The id of the drive.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns></returns>
-    public async Task<Drive> GetDriveByIdAsync(string driveId, string expand = null, string select = null, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<Drive> GetDriveByIdAsync(string driveId, string expand = null, string select = null, CancellationToken cancellationToken = default)
     {
         var uri = BuildApiUri("/drives/" + driveId, expand, select);
         var client = CreateClient();
@@ -166,9 +160,10 @@ public class OneDriveClient : OAuth2Client
     /// <param name="filter">The filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns></returns>
-    public async Task<Items> GetItemsAsync(string folderPath, string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, string filter = null, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<Items> GetItemsAsync(string folderPath, string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, string filter = null, CancellationToken cancellationToken = default)
     {
-        var uri = BuildApiUri($"{folderPath}:/children", expand, select, skipToken, top, orderby, filter);
+        var resourcePath = GetResourcePath(folderPath);
+        var uri = BuildApiUri($"{resourcePath}/children", expand, select, skipToken, top, orderby, filter);
         var client = CreateClient();
         var response = await client.GetAsync(uri, cancellationToken);
         if (response.IsSuccessStatusCode)
@@ -188,7 +183,7 @@ public class OneDriveClient : OAuth2Client
     /// <param name="itemPath">The folder path.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns></returns>
-    public async Task<Item> GetItemAsync(string itemPath, string expand = null, string select = null, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<Item> GetItemAsync(string itemPath, string expand = null, string select = null, CancellationToken cancellationToken = default)
     {
         var uri = BuildApiUri(itemPath, expand, select);
         var client = CreateClient();
@@ -203,9 +198,28 @@ public class OneDriveClient : OAuth2Client
         }
     }
 
-    public async Task<Items> SearchAsync(string filePath, string q, string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, string filter = null, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<Items> SearchAsync(IReadOnlyList<string> entityTypes, string query, string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, string filter = null, CancellationToken cancellationToken = default)
     {
-        var uri = BuildApiUri($"/me{filePath}:/search(q='{q}')", expand, select, skipToken, top, filter: filter);
+        var uri = BuildApiUri($"/search/query", expand, select, skipToken, top, filter: filter);
+        var client = CreateClient();
+        var searchRequest = new SearchRequest { EntityTypes = entityTypes, Query = new SearchQuery { QueryString = query } };
+        var content = new StringContent(JsonSerializer.Serialize(searchRequest));
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        var response = await client.PostAsync(uri,content, cancellationToken);
+        if (response.IsSuccessStatusCode)
+        {
+            return await response.Content.ReadJsonAsync<Items>();
+        }
+        else
+        {
+            throw await ProcessException(response.Content);
+        }
+    }
+
+    public async Task<Items> SearchItemsAsync(string folderPath, string q, string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, string filter = null, CancellationToken cancellationToken = default)
+    {
+        var resourcePath = GetResourcePath(folderPath);
+        var uri = BuildApiUri($"{resourcePath}/search(q='{q}')", expand, select, skipToken, top, filter: filter);
         var client = CreateClient();
         var response = await client.GetAsync(uri, cancellationToken);
         if (response.IsSuccessStatusCode)
@@ -218,10 +232,12 @@ public class OneDriveClient : OAuth2Client
         }
     }
 
+
     public async Task<Stream> DownloadFileAsync(string filePath, CancellationToken cancellationToken)
     {
+        var resourcePath = GetFileResourcePath(filePath);
         var client = CreateClient();
-        var uri = BuildApiUri($"/me{filePath}:/content");
+        var uri = BuildApiUri($"{resourcePath}/content");
         var response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         if (response.IsSuccessStatusCode)
         {
@@ -235,7 +251,8 @@ public class OneDriveClient : OAuth2Client
 
     public async Task<Item> UploadFileAsync(string folderPath, string fileName, Stream fileStream, bool? overwrite, IProgress<StreamProgress> progress, string expand = null, string select = null, CancellationToken cancellationToken = default)
     {
-        var uri = BuildApiUri($"/me{folderPath}/{fileName}:/content", expand);
+        var resourcePath = GetFileResourcePath(folderPath, fileName);
+        var uri = BuildApiUri($"{resourcePath}/content", expand);
         var client = CreateClient();
         var content = new StreamedContent(fileStream, progress, cancellationToken);
         content.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
@@ -252,7 +269,8 @@ public class OneDriveClient : OAuth2Client
 
     public async Task<UploadSession> CreateUploadSession(string folderPath, string fileName, string description, bool? overwrite, string expand = null, string select = null, CancellationToken cancellationToken = default)
     {
-        var uri = BuildApiUri($"/me{folderPath}/{fileName}:/createUploadSession", expand);
+        var resourcePath = GetFileResourcePath(folderPath, fileName);
+        var uri = BuildApiUri($"{resourcePath}/createUploadSession", expand);
         var client = CreateClient();
         var item = new Item { Name = fileName, Description = description };
         item.ConflictBehavior = overwrite.HasValue ? overwrite.Value ? ConflictBehavior.Replace : ConflictBehavior.Rename : ConflictBehavior.Fail;
@@ -287,9 +305,10 @@ public class OneDriveClient : OAuth2Client
             throw await ProcessException(response.Content);
         }
     }
-    public async Task DeleteItemAsync(string itemPath, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task DeleteItemAsync(string itemPath, CancellationToken cancellationToken = default)
     {
-        var uri = BuildApiUri(itemPath);
+        var resourcePath = GetFileResourcePath(itemPath);
+        var uri = BuildApiUri(resourcePath);
         var client = CreateClient();
         var response = await client.DeleteAsync(uri, cancellationToken);
         if (!response.IsSuccessStatusCode)
@@ -298,14 +317,19 @@ public class OneDriveClient : OAuth2Client
         }
     }
 
-    public async Task<Item> CreateFolderAsync(string folderPath, string name, string description, bool? overwrite, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<Item> CreateFolderAsync(string folderPath, string name, string description = null, bool? overwrite = null, CancellationToken cancellationToken = default)
     {
-        var uri = BuildApiUri(folderPath + "/children");
+        var resourcePath = GetResourcePath(folderPath);
+        var uri = BuildApiUri($"{resourcePath}/children");
         var client = CreateClient();
         var item = new Item { Name = name, Description = description };
         item.Folder = new FolderFacet();
         item.ConflictBehavior = overwrite.HasValue ? overwrite.Value ? ConflictBehavior.Replace : ConflictBehavior.Rename : ConflictBehavior.Fail;
-        var content = new StringContent(JsonSerializer.Serialize(item));
+        var options = new JsonSerializerOptions()
+        {
+            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+        };
+        var content = new StringContent(JsonSerializer.Serialize(item, options));
         content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         var response = await client.PostAsync(uri, content, cancellationToken);
         if (response.IsSuccessStatusCode)
@@ -318,10 +342,10 @@ public class OneDriveClient : OAuth2Client
         }
     }
 
-    public async Task<Uri> CopyItemAsync(string itemPath, Item item, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<Uri> CopyItemAsync(string itemPath, Item item, CancellationToken cancellationToken = default)
     {
-
-        var uri = BuildApiUri($"/me{itemPath}:/copy");
+        var resourcePath = GetFileResourcePath(itemPath);
+        var uri = BuildApiUri($"{resourcePath}/copy");
         var client = CreateClient();
         var content = new StringContent(JsonSerializer.Serialize(item));
         content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
@@ -354,9 +378,8 @@ public class OneDriveClient : OAuth2Client
         }
     }
 
-    public async Task<Item> UpdateItemAsync(string itemPath, Item item, string expand = null, string select = null, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<Item> UpdateItemAsync(string itemPath, Item item, string expand = null, string select = null, CancellationToken cancellationToken = default)
     {
-
         var uri = BuildApiUri(itemPath, expand, select);
         var client = CreateClient();
         var content = new StringContent(JsonSerializer.Serialize(item));
@@ -383,39 +406,26 @@ public class OneDriveClient : OAuth2Client
     /// </summary>
     /// <param name="path">The relative path requested.</param>
     /// <returns>The request URI.</returns>
-    private Uri BuildApiUri(string path, string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, string filter = null, string q = null)
+    private Uri BuildApiUri(string path, string expand = null, string select = null, string skipToken = null, int? top = null, string orderby = null, string filter = null)
     {
         var builder = new UriBuilder(ApiServiceUri);
         builder.Path += path;
-        var query = builder.Query ?? "";
-        if (query.StartsWith("?"))
-            query = query.Substring(1);
+        var query = new Dictionary<string, string>();
         if (!string.IsNullOrWhiteSpace(expand))
-            query += "&$expand=" + expand;
+            query.Add("expand", expand);
         if (!string.IsNullOrWhiteSpace(select))
-            query += "&$select=" + select;
-        if (top.HasValue && top > 0)
-            query += "&$top=" + top;
+            query.Add("select", select);
         if (!string.IsNullOrWhiteSpace(orderby))
-            query += "&$orderby=" + orderby;
-        if (!string.IsNullOrWhiteSpace(filter))
-            query += "&$filter=" + filter;
+            query.Add("orderby", orderby);
+        if (top.HasValue && top > 0)
+            query.Add("top", top.ToString());
         if (!string.IsNullOrWhiteSpace(skipToken))
-            query += "&$skiptoken=" + skipToken;
-        if (!string.IsNullOrWhiteSpace(q))
-            query += "&q=" + q;
-        builder.Query = Uri.EscapeDataString(query);
+            query.Add("top", skipToken);
+        if (!string.IsNullOrWhiteSpace(filter))
+            query.Add("filter", filter);
+        builder.Query = string.Join('&', query.Select(pair => $"${pair.Key}={Uri.EscapeDataString(pair.Value)}").ToArray());
         return builder.Uri;
 
-    }
-
-    public static string GetPath(string itemPath)
-    {
-        return string.IsNullOrWhiteSpace(itemPath) ? "/drive/root" : "/drive/root:/" + itemPath;
-    }
-    public static string GetPathById(string itemId)
-    {
-        return "/drive/items/" + itemId;
     }
 
     private HttpClient CreateClient(bool allowAutoRedirect = true)
@@ -434,6 +444,30 @@ public class OneDriveClient : OAuth2Client
             return new OneDriveException(await content.ReadAsStringAsync());
         var error = await content.ReadJsonAsync<ErrorResponse>();
         return new OneDriveException(error.Error);
+    }
+
+    private string GetResourcePath(string folderPath)
+    {
+        folderPath = folderPath?.Trim('/');
+        if (string.IsNullOrWhiteSpace(folderPath))
+            return "/me/drive/root";
+        else
+            return $"/me/drive/root:/{folderPath}:";
+    }
+
+    private string GetFileResourcePath(string folderPath, string fileName)
+    {
+        folderPath = folderPath?.Trim('/');
+        if (string.IsNullOrWhiteSpace(folderPath))
+            return $"/me/drive/root:/{fileName}:";
+        else
+            return $"/me/drive/root:/{folderPath}/{fileName}:";
+    }
+
+    private string GetFileResourcePath(string filePath)
+    {
+        filePath = filePath?.Trim('/');
+        return $"/me/drive/root:/{filePath}:";
     }
 
     #endregion

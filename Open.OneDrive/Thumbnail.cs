@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Open.OneDrive;
+﻿namespace Open.OneDrive;
 
 public class ThumbnailsSet
 {

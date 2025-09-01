@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text.Json.Serialization;
-
-namespace Open.OneDrive;
+﻿namespace Open.OneDrive;
 
 public class Items
 {
@@ -133,7 +130,6 @@ public class Item
 
     [JsonPropertyName("@name.conflictBehavior")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public ConflictBehavior ConflictBehavior { get; set; }
 }
 

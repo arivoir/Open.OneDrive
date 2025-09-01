@@ -19,8 +19,8 @@ namespace Open.OneDrive.Test
             _accessToken = token.AccessToken;
             var client = new OneDriveClient(_accessToken);
             var rootFolderName = Guid.NewGuid().ToString();
-            _rootFolderId = OneDriveClient.GetPath(rootFolderName);
-            await client.CreateFolderAsync(OneDriveClient.GetPath(""), rootFolderName, "", true);
+            _rootFolderId = rootFolderName;
+            await client.CreateFolderAsync("", rootFolderName);
         }
 
         [TearDown]
@@ -48,6 +48,49 @@ namespace Open.OneDrive.Test
             Assert.That(drive, Is.Not.Null);
         }
 
+
+        [Test]
+        public async Task GetItemsTest()
+        {
+            var stringToUpload = "Hello, World!";
+            var client = new OneDriveClient(_accessToken);
+            var file = await client.UploadFileAsync(_rootFolderId, "file.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
+            var folder = await client.CreateFolderAsync(_rootFolderId, "folder", "", false);
+            var items = await client.GetItemsAsync(_rootFolderId);
+
+            Assert.That(items.Value, Is.Not.Null);
+            Assert.That(items.Value.Count, Is.EqualTo(2));
+            Assert.That(items.Value[0].Name, Is.EqualTo("folder"));
+            Assert.That(items.Value[1].Name, Is.EqualTo("file.txt"));
+        }
+
+        //[Test]
+        //public async Task GetFilesTest()
+        //{
+        //    var stringToUpload = "Hello, World!";
+        //    var client = new OneDriveClient(_accessToken);
+        //    var file = await client.UploadFileAsync(_rootFolderId, "file.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
+        //    var folder = await client.CreateFolderAsync(_rootFolderId, "folder", "", false);
+        //    var items = await client.SearchAsync(["driveItem"], $"path:\"{_rootFolderId}\" AND isDocument=true");
+
+        //    Assert.That(items.Value, Is.Not.Null);
+        //    Assert.That(items.Value.Count, Is.EqualTo(1));
+        //    Assert.That(items.Value[0].Name, Is.EqualTo("file.txt"));
+        //}
+
+        [Test]
+        public async Task GetFoldersTest()
+        {
+            var stringToUpload = "Hello, World!";
+            var client = new OneDriveClient(_accessToken);
+            var file = await client.UploadFileAsync(_rootFolderId, "file.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
+            var folder = await client.CreateFolderAsync(_rootFolderId, "folder", "", false);
+            var items = await client.GetItemsAsync(_rootFolderId, filter: "folder ne null");
+
+            Assert.That(items.Value, Is.Not.Null);
+            Assert.That(items.Value.Count, Is.EqualTo(1));
+            Assert.That(items.Value[0].Name, Is.EqualTo("folder"));
+        }
 
         [Test]
         public async Task UploadAndDownloadFileTest()
@@ -113,7 +156,7 @@ namespace Open.OneDrive.Test
             var file1 = await client.UploadFileAsync(_rootFolderId, "file.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
             var file2 = await client.UploadFileAsync(_rootFolderId, "file2.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
             var file3 = await client.UploadFileAsync(_rootFolderId, "nile.txt", new MemoryStream(Encoding.UTF8.GetBytes(stringToUpload)), true, new Progress<StreamProgress>(p => { }));
-            var items = await client.SearchAsync(_rootFolderId, "file");
+            var items = await client.SearchItemsAsync(_rootFolderId, "file");
 
             Assert.That(file1.Name, Is.EqualTo("file.txt"));
             Assert.That(file2.Name, Is.EqualTo("file2.txt"));
