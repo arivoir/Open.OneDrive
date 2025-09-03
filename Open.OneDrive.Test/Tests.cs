@@ -86,7 +86,6 @@ namespace Open.OneDrive.Test
         [Test]
         public async Task GetItemsWithTopAndSkipTest()
         {
-            var stringToUpload = "Hello, World!";
             var client = new OneDriveClient(_accessToken);
             for (int i = 1; i < 10; i++)
             {
